@@ -1,115 +1,111 @@
 # 📦 IoT Sensor Gateway: ESP32 + Lichee RV Dock
 
-> Initial commit documentation for integrating SSD1306 and AHT10 via Lichee RV Dock and ESP32.
+> Second commit – ESP32 firmware complete and tested, also include requirements document for development and check functionality.
 
 ---
 
 ## 1. 🧾 Existing Driver Documentation Review
 
-### 🔍 SSD1306 (Lichee Side — I2C Display)
-
-* **Oled Driver:**
-  From the [Adafruit CircuitPython SSD1306](https://github.com/adafruit/Adafruit_CircuitPython_SSD1306) library, which is actively maintained and works with Linux.
-
-* **Deprecated Alternative:**
-  [Adafruit\_Python\_SSD1306](https://github.com/adafruit/Adafruit_Python_SSD1306) is no longer maintained and is not recommended for new projects, but just in case.
-
-
 ### 🔍 AHT10 (ESP32 Side — Temp/Humidity Sensor)
 
 * **ESP-IDF/RTOS Support:**
-  AHT10 is not included in the official ESP-IDF drivers, but userland drivers exist:
+  AHT10 basic library:
 
-  * [UncleRus/esp-idf-lib](https://github.com/UncleRus/esp-idf-lib/tree/master/components/aht)
-  * [lbernstone/esp32-aht10](https://github.com/lbernstone/esp32-aht10)
+  * [ESPBoards](https://www.espboards.dev/sensors/aht10/)
+  
 
 * **I2C Protocol:**
-  Sensor operates on 0x38 address, 3.3V logic, supports repeated measurements and status reading.
+  Sensor operates on 0x38 and 0x39 address, 3.3V logic, supports repeated measurements and status reading.
+
+* **Measurement Ranges:**
+
+  Temperature: -40°C to 85°C, ±0.3°C accuracy
+  Humidity: 0% to 100% RH, ±2% typical accuracy
 
 ---
 
-## 2. 🔧 Testing process
+## 2. 🔧 ESP32 Firmware Overview
 
-### ✅ SSD1306 (Lichee RV Dock — Ubuntu)
+The firmware running on the ESP32 is developed using **ESP-IDF** within **VS Code**. It enables the board to:
 
-Via 📡 UART Communication (to Lichee from Ubuntu PC)
+* Initialize and read data from the **AHT10** temperature and humidity sensor using the I2C interface.
+* Configure and open a **UART interface** to receive specific commands.
+* Detect an incoming pattern over UART — currently, the keyword **"getdata"** — and respond with the latest sensor measurements formatted as a string.
 
 
-#### 📜 OLED I2C Driver Test (Python)
 
-```bash
-sudo apt install python3-pip i2c-tools python3-smbus
-pip3 install adafruit-circuitpython-ssd1306
-```
+### 🔧 Main Functional Components
 
-##### Example Test Script:
+* **`aht10_init()`**: Initializes the I2C bus and sends the configuration sequence to prepare the AHT10 sensor.
+* **`aht10_measure()`**: Executes a measurement request to the sensor and reads the resulting temperature and humidity values.
+* **`init_uart()`**: Sets up UART communication parameters including baud rate, data bits, and buffer size.
+* **`rx_task()`**: A UART reception task that continuously listens for input, checking if a known pattern (like "getdata") is received.
+* **`check_pattern()`**: Parses incoming data to detect pre-defined patterns and triggers appropriate responses (e.g., measuring and sending sensor data).
+* **`sendData()`**: Sends the formatted string containing temperature and humidity via UART.
+* **`command_task()`**: A FreeRTOS task that continuously manages incoming commands using the detection routine.
 
-```python
-import board, busio, adafruit_ssd1306
-i2c = busio.I2C(board.SCL, board.SDA)
-display = adafruit_ssd1306.SSD1306_I2C(128, 64, i2c)
-display.fill(0)
-display.text("SSD1306 Ready", 0, 0, 1)
-display.show()
-```
-
-### ✅ AHT10 (ESP32 — ESP-IDF with VS Code)
-
-#### ⚙️ ESP-IDF Configuration
-
-Take required files from repository and configure it code via project enviroment
-
-#### 🧪 Example Test Case
-
-```c
-#include "aht.h"
-
-void app_main() {
-    aht_init(I2C_NUM_0, GPIO_NUM_X, GPIO_NUM_X);
-    while (1) {
-        float temp, hum;
-        aht_read_data(&temp, &hum);
-        printf("Temp: %.2f°C, Hum: %.2f%%\n", temp, hum);
-        vTaskDelay(pdMS_TO_TICKS(1000));
-    }
-}
-```
+This architecture enables the ESP32 to operate autonomously and interactively, serving sensor data on-demand through UART when it receives the expected command pattern.
 
 ---
 
-## 3. 🧩 Original Code / Libraries
+## 3. 🧪 UART Communication Test (Validated)
+
+The UART interface and pattern detection logic have been tested and validated.
+
+### ✅ Test Scenario
+
+* **Command Sent:** `getdata`
+* **Expected Response Format:** `temperature,humidity`
+
+  * **Example Output:** `23.34,67.58`
+
+### 🔄 Test Steps
+
+1. Connect to the ESP32 via UART (e.g., using `minicom`, `screen`, or `idf.py monitor`) at **115200 baud**.
+2. Send the string `getdata` followed by Enter.
+3. Observe the UART output response from the ESP32.
+
+### 🧪 Validation Criteria
+
+* The response is received within \~1 second.
+* The format follows `XX.XX,YY.YY`.
+* Output values are within:
+
+  * **Temperature:** -40°C to 85°C
+  * **Humidity:** 0% to 100% RH
+
+This confirms the correct operation of UART communication and sensor readout.
+
+---
+
+## 4. 🧩 Original Code / Libraries
 
 ### Attribution & Licensing:
 
-* [Adafruit CircuitPython SSD1306](https://github.com/adafruit/Adafruit_CircuitPython_SSD1306) – MIT License
-* [UncleRus esp-idf-lib](https://github.com/UncleRus/esp-idf-lib) – Apache 2.0 License
-* Original code by this project’s authors — Licensed under MIT (see `LICENSE` file)
+* [ESPBoards](https://www.espboards.dev/sensors/aht10/)
+- aht10 and i2c configuration
+
+* Yonnier Alexander muñoz Salazar
+- aht10 code adaptation, uart configuration and firmware struct define
 
 ---
 
-## 4. 📁 Suggested Repository Structure
+## 5. 📁 Suggested Repository Structure
 
 ```
-iot-gateway-project/
+LICHEE_RV_LINUX_PROJECT/
 ├── /docs/
-│   └── README.md (this file)
 │   └── wiring_diagrams.svg
+│   └── Requirements.xlsx
 ├── /src/
-│   ├── /drivers/
-│   │   ├── ssd1306_display.py
-│   │   └── uart_bridge.py
 │   └── /esp32/
+│       └── drivers
 │       ├── main/
 │       │   ├── main.c
-│       │   └── aht_test.c
-├── /components/
-│   └── aht10/  (ESP-IDF reusable driver)
-├── /tests/
-│   ├── test_ssd1306.py
-│   └── test_uart_rx.py
-├── /images/
-│   └── architecture_diagram.png
-└── LICENSE
+│       │   ├── aht10.c
+│       │   ├── aht10.h
+│       │   ├── uart_com.h
+│       │   └── uart_com.c
+└── README.md (this file)
 ```
-
----
+--- 
