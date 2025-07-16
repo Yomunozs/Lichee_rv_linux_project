@@ -130,7 +130,7 @@ python3 ssd1306-demo.py
 
 ---
 
-## xx. 📁 Suggested Repository Structure
+## xx. 📁 Repository Structure
 
 ```
 LICHEE_RV_LINUX_PROJECT/
