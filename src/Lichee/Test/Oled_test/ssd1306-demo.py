@@ -121,7 +121,7 @@ class SSD1306_128_64(SSD1306Base):
         self.command(SSD1306_NORMALDISPLAY)
 
 # Main Execution
-i2c_device = 1
+i2c_device = 0
 if not os.path.exists(f"/dev/i2c-{i2c_device}"):
     print(f"I2C device /dev/i2c-{i2c_device} not found.")
     print("Check your devicetree or enable i2c2 in u-boot.")

@@ -7,8 +7,6 @@ INTERVAL=5
 # Configurar UART
 stty -F $DEVICE 115200 cs8 -cstopb -parenb -echo -icanon min 1 time 1
 
-echo "[INFO] UART polling activo cada $INTERVAL s en $DEVICE"
-
 while true; do
     # Limpiar cualquier dato anterior
     cat < $DEVICE > /dev/null & sleep 0.1; kill $! 2>/dev/null
@@ -18,7 +16,7 @@ while true; do
     CAT_PID=$!
 
     # Enviar comando (exacto, sin terminadores)
-   echo -n "getdata" > $DEVICE
+    echo -n "getdata" > $DEVICE
 
     # Esperar respuesta del dispositivo
     sleep 3
@@ -26,13 +24,6 @@ while true; do
     # Finalizar lectura
     kill $CAT_PID 2>/dev/null
     wait $CAT_PID 2>/dev/null
-
-    # Mostrar el contenido leído
-    if [ -s "$OUTPUT" ]; then
-        echo "[OK] $(date): $(cat $OUTPUT)"
-    else
-        echo "[WARN] $(date): Sin respuesta UART"
-    fi
 
     sleep $INTERVAL
 done

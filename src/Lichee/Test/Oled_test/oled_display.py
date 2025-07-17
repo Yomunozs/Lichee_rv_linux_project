@@ -133,37 +133,47 @@ def render_text(lines, width=128, height=64):
 
 
 def main():
-    disp = SSD1306Base(128, 64, i2c_bus=1)
+    disp = SSD1306Base(128, 64, i2c_bus=0)
     disp.begin()
     last_text = ""
+    last_lines = []
 
     while True:
         if not os.path.exists("/tmp/data.txt"):
             time.sleep(1)
             continue
-        with open("/tmp/data.txt", "r") as f:
-            raw = f.read().strip()
+
         try:
+            with open("/tmp/data.txt", "r") as f:
+                raw = f.read().strip()
+
+            if not raw or ',' not in raw:
+                raise ValueError("Dato vacío o malformado")
+
             temp, hum = raw.split(",")
-            
+            temp = temp.strip()
+            hum = hum.strip()
+
             lines = [
-                {"text": "IoT Sensor Gateway", "invert": False},  # Título en invertido
-        	{"text": "", "invert": False},                  # Línea vacía
-                {"text": "", "invert": False},                  # Separación extra si deseas
+                {"text": "IoT Sensor Gateway", "invert": False},
+                {"text": "", "invert": False},
+                {"text": "", "invert": False},
                 {"text": f"TEMP: {temp}C", "invert": False},
                 {"text": f"HUM:  {hum}%", "invert": False},
-	    ]
+            ]
+
+            text_repr = "\n".join([line["text"] for line in lines])
+            if text_repr != last_text:
+                disp.clear()
+                disp.buffer = render_text(lines)
+                disp.display()
+                last_text = text_repr
+                last_lines = lines
 
         except:
-            lines = ["IoT Sensor Gateway", "ESP32 + Lichee RV Dock", "No data"]
+            # No se actualiza ni borra la pantalla, solo conserva el contenido anterior
+            pass
 
-        text_repr = "\n".join([line["text"] for line in lines])
-        if text_repr != last_text:
-            disp.clear()
-            disp.buffer = render_text(lines)
-            disp.display()
-            print("[OLED] Showing:", text_repr.replace("\n", " | "))
-            last_text = text_repr
         time.sleep(5)
 
 if __name__ == "__main__":

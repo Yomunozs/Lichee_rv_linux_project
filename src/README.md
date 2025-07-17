@@ -1,6 +1,6 @@
 # 📦 IoT Sensor Gateway: ESP32 + Lichee RV Dock
 
-> Third commit – Lichee rv dock i2c configured and tested oled screen (ssd1306).
+> Fourth – Lichee rv dock UART configured, tested data send and receive with ESP32. Data parsed and showed with oled screen (ssd1306).
 
 ---
 
@@ -59,7 +59,7 @@ The UART interface and pattern detection logic have been tested and validated.
 
 ### 🔄 Test Steps
 
-1. Connect to the ESP32 via UART (e.g., using `minicom`, `screen`, or `idf.py monitor`) at **115200 baud**.
+1. Connect to the ESP32 via UART (using YAT terminal) at **115200 baud**.
 2. Send the string `getdata` followed by Enter.
 3. Observe the UART output response from the ESP32.
 
@@ -115,6 +115,88 @@ python3 ssd1306-demo.py
 * Script safely exits if `/dev/i2c-1` is not present, giving suggestions to enable I2C2.
 
 ---
+## 4. 🧪 Lichee UART  ↔ ESP32 UART Integration 
+
+
+### 🔌 UART Connection
+
+- **UART0** on the Lichee was used, originally assigned for debug console.
+- Configuration was modified to release UART for general use.
+- UART pins were physically connected between the Lichee and the ESP32.
+
+### 📝 Implemented Scripts
+
+#### 📤 Shell Script (`sensor-poll.sh`)
+
+This script:
+
+- Runs on the Lichee to request sensor data from the ESP32 every 5 seconds.
+- Sends the exact command `getdata` through UART.
+- Reads the response and saves it to the file `/tmp/data.txt`.
+- Overwrites the file content on each request.
+
+**Expected output example:**
+
+- [OK] Sat Jul 12 06:25:00 UTC 2025: 23.34,67.58 (console info)
+- The file was created and data saved.
+ 
+The communication between **ESP32** and **Lichee RV Dock** via **UART** was successfully 
+
+---
+
+#### 5. 🖥️ Python Script (`oled_display.py`)
+
+This script:
+
+- Reads the content of `/tmp/data.txt`.
+- Parses temperature and humidity values.
+- Displays the readings on the OLED screen with centered text using a 5x7 font.
+- Uses key functions such as:
+
+  - `render_text()`: Renders a vertically and horizontally centered text buffer with optional inversion.
+  - `disp.display()`: Sends the buffer to the SSD1306 display.
+
+**Expected output example:**
+
+- [OLED] Showing: IoT Sensor Gateway | TEMP: 23.34C | HUM: 67.58% 
+- The values were rendered and updated live on the OLED screen.
+---
+### 6. 🌐 Web Server for Remote Sensor Monitoring (`iot_web_server.py`)
+
+This script transforms the Lichee RV Dock into a lightweight IoT sensor gateway web server, accessible over the local Wi-Fi network. It serves live temperature and humidity data collected from the ESP32 and saved in `/tmp/data.txt`.
+
+🧩 Purpose
+To remotely visualize environmental conditions (temperature and humidity) from a browser via a clean, auto-refreshing HTML page.
+
+**⚙️ Features**
+
+  - Serves HTTP on port 8080
+  - Auto-refreshes every 5 seconds
+  - If valid data is present in `/tmp/data.txt`, it is displayed
+
+**📝 Sample Output (Web Page)**
+
+                    💡 IoT Sensor Gateway
+
+                    Temperature: 23.94 °C
+                    Humidity: 64.89 %
+
+Accessible from:
+
+http://<lichee-ip>:1234
+
+**🧪 Data Format**
+
+The web server expects this format in the file `/tmp/data.txt`:
+
+23.94,64.89
+
+Where:
+
+    23.94 is temperature (°C)
+
+    64.89 is humidity (% RH)
+---
 
 ## x. 🧩 Original Code / Libraries
 
@@ -139,8 +221,15 @@ LICHEE_RV_LINUX_PROJECT/
 │   └── Requirements.xlsx
 ├── /src/
 │   └── /Lichee
-|       ├──test
-|          └── ssd1306-demo.py
+|       ├──src
+|       └──Test
+|           ├──Uart_test
+|           |  └── uart_poller.sh
+|           ├──Oled_test
+|           |  ├── oled_display.py
+|           |  └── ssd1306-demo.py
+|           └──Server_test
+|              └── iot_server.py
 │   └── /esp32/
 │       └── main/
 │           ├── main.c
