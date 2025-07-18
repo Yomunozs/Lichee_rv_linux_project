@@ -1,0 +1,12 @@
+[Unit]
+Description=IoT Sensor Gateway Web Server
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/iot_web_server.py
+Restart=always
+StandardOutput=null
+StandardError=null
+
+[Install]
+WantedBy=multi-user.target

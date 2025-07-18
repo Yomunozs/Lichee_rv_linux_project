@@ -1,0 +1,14 @@
+[Unit]
+Description=OLED Display Service for IoT Sensor Gateway
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/python3 /usr/local/bin/oled_display.py
+Restart=always
+RestartSec=5
+User=root
+StandardOutput=null
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

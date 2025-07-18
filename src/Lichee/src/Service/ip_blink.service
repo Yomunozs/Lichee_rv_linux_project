@@ -1,0 +1,12 @@
+[Unit]
+Description=Periodic IP LED Blink Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ip-blink.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

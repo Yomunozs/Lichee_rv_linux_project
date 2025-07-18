@@ -59,6 +59,5 @@ class MyHandler(BaseHTTPRequestHandler):
         self.wfile.write(message.encode("utf-8"))
 
 if __name__ == '__main__':
-    print(f"Starting server on {HOST_NAME}:{PORT}...")
     httpd = HTTPServer((HOST_NAME, PORT), MyHandler)
     httpd.serve_forever()

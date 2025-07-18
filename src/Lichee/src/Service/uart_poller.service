@@ -1,0 +1,14 @@
+[Unit]
+Description=UART Poller Service
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/uart-poller.sh
+Restart=always
+RestartSec=5
+StandardOutput=append:/var/log/uart-poller.log
+StandardError=append:/var/log/uart-poller.err
+User=root
+
+[Install]
+WantedBy=multi-user.target
